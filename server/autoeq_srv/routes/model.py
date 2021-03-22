@@ -45,6 +45,15 @@ APP = current_app
 def _get_phone_type(to_parse):
     return IN_EAR if IN_EAR in to_parse else OVER_EAR
 
+def _result_instance(source, name, target, model):
+    return {
+        'source': source,
+        'name': name,
+        'type': PHONE_TYPE_DETAILS[_get_phone_type(target)],
+        'target' : target,
+        'model' : model
+    }
+
 def _manufacturers_with_variants():
     """Return the raw manufacturers data including variants."""
     with open(MNFCT_FILE,
@@ -71,21 +80,6 @@ def resolve_manufacturer(name):
             return manufacturer[0], name
     return None
 
-# def get_oratory_phones():
-#     """Return the list of headphones with Oratory measurements."""
-#     phones = []
-#     with open(ORTRY_NAMES, 'r',
-#               encoding='utf-8') as _fh:
-#         raw_names = _fh.read().strip().split('\n')
-#         phone_parts = [m.strip().split('\t') for m in raw_names]
-#     for phone in phone_parts:
-#         if phone[0] == 'false_name':
-#             continue
-#         phones.append({ 'key': phone[1], 'name': phone[0], 'type': phone[2] })
-#     return phones
-
-# ORATORY_PHONES = get_oratory_phones()
-
 def get_results_map():
     """Return all results."""
     results = {}
@@ -108,14 +102,10 @@ def parse_results_file(source, results_file):
             tup_srch = re.search(r'- \[(.*)\]\(.\/(.*)\/(.*)\)', raw_rec)
             # If we get a match
             if tup_srch:
-                phone_type = _get_phone_type(tup_srch.group(2))
-                results.append({
-                    'source': source,
-                    'name': tup_srch.group(1),
-                    'type': PHONE_TYPE_DETAILS[phone_type],
-                    'target': tup_srch.group(2),
-                    'model' : tup_srch.group(3)
-                })
+                results.append(_result_instance(source,
+                                                tup_srch.group(1),
+                                                tup_srch.group(2),
+                                                tup_srch.group(3)))
     return results
 
 RESULTS = get_results_map()
@@ -133,14 +123,10 @@ def get_recommended_results():
         for raw_rec in raw_recs:
             tup_srch = re.search(r'- \[(.*)\]\(.\/(.*)\/(.*)\/(.*)\)', raw_rec)
             if tup_srch:
-                phone_type = _get_phone_type(tup_srch.group(3))
-                recommendations.append({
-                    'source': tup_srch.group(2),
-                    'name': tup_srch.group(1),
-                    'type': PHONE_TYPE_DETAILS[phone_type],
-                    'target' : tup_srch.group(3),
-                    'model' : tup_srch.group(4)
-                })
+                recommendations.append(_result_instance(tup_srch.group(2),
+                                                        tup_srch.group(1),
+                                                        tup_srch.group(3),
+                                                        tup_srch.group(4)))
     return recommendations
 
 RECOMMENDED = get_recommended_results()
